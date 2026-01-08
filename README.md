@@ -6,6 +6,15 @@ It allows users to ask medical questions and receive answers grounded strictly i
 
 ---
 
+## 🌐 Live Demo
+
+🔗 **Streamlit App**  
+https://medibot-h4sv9e4fh7jswhrabfvwu7.streamlit.app/
+
+> ⚠️ Note: The app may take a few seconds to load due to Streamlit Cloud cold start.
+
+---
+
 ## 🚀 Features
 
 * 🔍 Semantic search using **FAISS vector store**

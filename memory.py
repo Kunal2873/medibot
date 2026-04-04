@@ -1,6 +1,6 @@
 from langchain_community.document_loaders import PyPDFLoader, DirectoryLoader
+from langchain_community.embeddings import FastEmbedEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
 
 ## Uncomment the following files if you're not using pipenv as your virtual environment manager
@@ -35,7 +35,7 @@ text_chunks=create_chunks(extracted_data=documents)
 # Step 3: Create Vector Embeddings 
 
 def get_embedding_model():
-    embedding_model=HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
+    embedding_model=FastEmbedEmbeddings(model_name="BAAI/bge-small-en-v1.5")
     return embedding_model
 
 embedding_model=get_embedding_model()

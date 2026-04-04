@@ -1,148 +1,145 @@
-# MediBot — Medical RAG Chatbot 🩺
+# MediBot — Agentic Medical RAG Chatbot 🩺
 
-MediBot is a **Retrieval-Augmented Generation (RAG)** based medical chatbot built using **LangChain**, **FAISS**, **Groq-hosted LLMs**, and **Streamlit**.
+MediBot is a **Corrective RAG (CRAG)** based medical chatbot built with **LangGraph**, **FastAPI**, **FAISS**, **Groq-hosted LLMs**, and **Docker**.
 
-It allows users to ask medical questions and receive answers grounded strictly in a pre-indexed medical knowledge base, avoiding hallucinations and unsupported claims.
+It retrieves answers strictly from a medical knowledge base, grades retrieved documents for relevance, rewrites weak queries, and refuses to answer from general knowledge — no hallucinations.
 
 ---
 
-## 🌐 Live Demo
+## 🌐 Live API
 
-🔗 **Streamlit App**  
-https://medibot-h4sv9e4fh7jswhrabfvwu7.streamlit.app/
+🔗 **FastAPI Backend (Render)**
+https://medibot-backend-hym8.onrender.com
 
-> ⚠️ Note: The app may take a few seconds to load due to Streamlit Cloud cold start.
+📖 **Interactive API Docs (Swagger UI)**
+https://medibot-backend-hym8.onrender.com/docs
+
+> ⚠️ Free tier cold start may take 30–50 seconds on first request.
 
 ---
 
 ## 🚀 Features
 
-* 🔍 Semantic search using **FAISS vector store**
-* 🧠 Context-aware answers via **Groq LLM (LLaMA-based)**
-* 📄 Answers restricted strictly to retrieved documents
-* 💬 Interactive chat UI built with **Streamlit**
-* 🔐 Secure API key handling using environment variables
+* 🤖 **Agentic CRAG pipeline** built with **LangGraph**
+* 🔍 Semantic search using **FAISS** + **FastEmbed** (no PyTorch dependency)
+* ✅ **Document grading** — filters irrelevant retrieved chunks before generation
+* 🔄 **Query rewriting** — rephrases weak queries and retries retrieval once
+* 🚫 **Hard context guard** — returns "I don't know" when no relevant docs found
+* ⚡ **Dual-model strategy** — 8B model for grading, 70B for generation
+* 🌐 **FastAPI REST backend** with Pydantic validation and Swagger docs
+* 🐳 **Fully containerized** with Docker and Docker Compose
+* 🚀 **Deployed on Render** via Docker
 
 ---
 
-## 🏗️ Architecture (High Level)
-
+## 🏗️ Architecture
 ```
 User Query
    ↓
-FAISS Retriever (Top-k documents)
+FastAPI /chat endpoint
    ↓
-Prompt + Context
+LangGraph CRAG Pipeline
+   ├── retrieve         → FAISS top-k retrieval
+   ├── grade_documents  → LLM relevance grading (8B model)
+   ├── rewrite_query    → Query rewriting + retry (if all docs fail grading)
+   └── generate         → Final answer generation (70B model)
    ↓
-Groq LLM
+JSON Response (answer + sources)
    ↓
-Grounded Answer
+Streamlit Frontend
 ```
-
-This follows a **modern explicit RAG pipeline** (no deprecated LangChain chains).
 
 ---
 
 ## 🛠️ Tech Stack
 
-* **Python 3.12**
-* **LangChain**
-* **FAISS**
-* **Groq API**
-* **HuggingFace Embeddings**
-* **Streamlit**
+* **Python 3.13**
+* **LangGraph** — agentic CRAG graph
+* **LangChain** — LCEL pipeline, FAISS integration
+* **FastAPI** — REST API backend
+* **FAISS** — vector similarity search
+* **FastEmbed** — lightweight embeddings (BAAI/bge-small-en-v1.5)
+* **Groq API** — LLaMA 3.3 70B (generation) + LLaMA 3.1 8B (grading)
+* **Streamlit** — chat frontend
+* **Docker + Docker Compose** — containerization
+* **Render** — cloud deployment
 
 ---
 
 ## 📂 Project Structure
-
 ```
 medibot/
 │
-├── medibot.py                  # Streamlit app entry point
-├── memory.py                   # Vector store creation logic
-├── connect_memory_with_llm.py  # RAG pipeline wiring
-├── requirements.txt
-├── .gitignore
-├── README.md
+├── app/
+│   ├── main.py              # FastAPI app — /chat and /health endpoints
+│   ├── crag_pipeline.py     # LangGraph CRAG pipeline
+│   └── schemas.py           # Pydantic request/response models
 │
-├── data/            # (ignored) source documents
-├── vectorstore/     # (ignored) FAISS index
-└── venv/            # (ignored) virtual environment
+├── frontend.py              # Streamlit chat UI
+├── memory.py                # FAISS index creation script (run once)
+├── Dockerfile
+├── docker-compose.yml
+├── requirements.txt
+├── .env                     # (ignored) API keys
+├── data/                    # (ignored) source PDFs
+└── vectorstore/             # (ignored) FAISS index
 ```
-
-> ⚠️ `data/`, `vectorstore/`, `.env`, and `venv/` are intentionally excluded from GitHub.
 
 ---
 
 ## 🔐 Environment Variables
 
 Create a `.env` file in the project root:
-
 ```env
 GROQ_API_KEY=your_groq_api_key_here
 ```
 
-**Do NOT commit this file.**
-It is already ignored via `.gitignore`.
-
 ---
 
-## 📦 Installation & Setup
-
-### 1️⃣ Clone the repository
-
+## 📦 Running Locally with Docker
 ```bash
 git clone https://github.com/Kunal2873/medibot.git
 cd medibot
 ```
 
-### 2️⃣ Create virtual environment (Python 3.12)
-
+Add your `.env` file, then:
 ```bash
-python -m venv venv
-venv\Scripts\activate   # Windows
+docker compose up --build
 ```
 
-### 3️⃣ Install dependencies
+- Frontend: http://localhost:8501
+- Backend API: http://localhost:8000
+- Swagger docs: http://localhost:8000/docs
 
+---
+
+## 📦 Running Locally without Docker
 ```bash
 pip install -r requirements.txt
+python memory.py  # build FAISS index once
 ```
 
----
-
-## ▶️ Running the App
-
+Terminal 1:
 ```bash
-streamlit run medibot.py
+python -m uvicorn app.main:app --port 8000
 ```
 
-Then open the browser at:
-
+Terminal 2:
+```bash
+streamlit run frontend.py
 ```
-http://localhost:8501
-```
-
----
-
-## 📌 Notes
-
-* The FAISS vector store must be generated locally before running queries.
-* This project intentionally avoids deprecated LangChain abstractions.
-* Answers are **strictly grounded in retrieved documents** — no hallucinations.
 
 ---
 
 ## ⚠️ Disclaimer
 
-This project is for **educational and experimental purposes only**.
-It is **not a medical diagnostic tool** and should not be used as a substitute for professional medical advice.
+This project is for **educational purposes only**.
+It is **not a medical diagnostic tool** and should not replace professional medical advice.
 
 ---
 
 ## 👤 Author
 
 **Kunal Salaria**
-B.Tech | AI / ML / GenAI
+B.Tech | IT | AI / ML / GenAI
 GitHub: [https://github.com/Kunal2873](https://github.com/Kunal2873)
